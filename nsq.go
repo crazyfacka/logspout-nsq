@@ -3,7 +3,6 @@ package nsq
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -30,6 +29,7 @@ type Data struct {
 	ParentCtx   string `json:"parent_ctx_id"` // TODO: this should not be here
 	Service     string `json:"service"`
 	Environment string `json:"environment,omitempty"`
+	DockerName  string `json:"dockername"`
 	HostName    string `json:"hostname"`
 	Timestamp   string `json:"timestamp"`
 	Severity    string `json:"severity"`
@@ -44,16 +44,7 @@ func uuidGen() string {
 	return uuid[0 : len(uuid)-1]
 }
 
-func hostGen() string {
-	host, err := os.Hostname()
-	if err != nil {
-		fmt.Println("Problem getting hostname")
-	}
-	return host
-}
-
 var (
-	host = hostGen()
 	uuid = uuidGen()
 )
 
@@ -151,7 +142,7 @@ func getDate() string {
 	return time.Now().Format("2006-01-02T15:04:05.999999Z")
 }
 
-func (a *NsqAdapter) buildMessage(msg string) *Log {
+func (a *NsqAdapter) buildMessage(msg string, name string, host string) *Log {
 	log := &Log{
 		Meta: &Meta{
 			Process: uuid,
@@ -160,6 +151,7 @@ func (a *NsqAdapter) buildMessage(msg string) *Log {
 		Data: &Data{
 			ParentCtx:   uuid,
 			Service:     a.svc,
+			DockerName:  name,
 			HostName:    host,
 			Timestamp:   getDate(),
 			Severity:    "raw",
@@ -174,7 +166,7 @@ func (a *NsqAdapter) buildMessage(msg string) *Log {
 // Stream will handle the logging messages
 func (a *NsqAdapter) Stream(logstream chan *router.Message) {
 	for rm := range logstream {
-		msg, err := json.Marshal(a.buildMessage(rm.Data))
+		msg, err := json.Marshal(a.buildMessage(rm.Data, rm.Container.Name, rm.Container.Config.Hostname))
 		if err != nil {
 			fmt.Printf("Error creating JSON: %s\n", err.Error())
 			continue
