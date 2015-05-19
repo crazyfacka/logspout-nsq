@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 	"time"
 
+	uuidgen "code.google.com/p/go-uuid/uuid"
 	gonsq "github.com/bitly/go-nsq"
 	"github.com/gliderlabs/logspout/router"
 )
@@ -39,17 +39,9 @@ type Data struct {
 	Message     string `json:"msg"`
 }
 
-func chop(s string) string {
-	return s[0 : len(s)-1]
-}
-
 func uuidGen() string {
-	uuid, err := exec.Command("/usr/bin/uuidgen").Output() // FIXME This compromises portability
-	if err != nil {
-		fmt.Println("Problem getting hostname")
-	}
-	return chop(string(uuid))
-
+	uuid := uuidgen.NewRandom().String()
+	return uuid[0 : len(uuid)-1]
 }
 
 func hostGen() string {
