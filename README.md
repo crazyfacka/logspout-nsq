@@ -23,7 +23,7 @@ $ docker build -t <your_name>/logspout-nsq .
 Finally you just need to start this new docker container
 
 ```bash
-docker run --name="logspout" --volume=/var/run/docker.sock:/tmp/docker.sock <your_name>/logspout-nsq "nsq://<nsq_ipaddr>:<nsq_port>?topic=<topic>&svc=<service>&app=<app_name>"
+docker run -t --name="logspout" --volume=/var/run/docker.sock:/tmp/docker.sock <your_name>/logspout-nsq "nsq://<nsq_ipaddr>:<nsq_port>?topic=<topic>&svc=<service>&app=<app_name>"
 ```
 
 ## Memo
