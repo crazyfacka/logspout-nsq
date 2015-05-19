@@ -68,12 +68,12 @@ type NsqAdapter struct {
 	producer *gonsq.Producer
 }
 
-func parseNsqAddress(address string) []string {
+func parseNsqAddress(address string) string {
 	fmt.Printf("Parsing address '%s'\n", address)
 	if strings.Contains(address, "/") {
 		address = address[:strings.Index(address, "/")]
 	}
-	return strings.Split(address, ",")
+	return strings.Split(address, ",")[0]
 }
 
 func parseTopic(address string, options map[string]string) string {
@@ -113,7 +113,7 @@ func NewNsqAdapter(route *router.Route) (router.LogAdapter, error) {
 	}
 
 	fmt.Printf("Registering producer %s\n", address)
-	w, err := gonsq.NewProducer(address[0]+":"+address[1], gonsq.NewConfig())
+	w, err := gonsq.NewProducer(address, gonsq.NewConfig())
 	if err != nil {
 		return nil, err
 	}
