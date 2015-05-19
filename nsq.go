@@ -69,6 +69,7 @@ type NsqAdapter struct {
 }
 
 func parseNsqAddress(address string) []string {
+	fmt.Printf("Parsing address '%s'\n", address)
 	if strings.Contains(address, "/") {
 		address = address[:strings.Index(address, "/")]
 	}
@@ -76,6 +77,8 @@ func parseNsqAddress(address string) []string {
 }
 
 func parseTopic(address string, options map[string]string) string {
+	fmt.Printf("Parsing topic '%s' %+v\n", address, options)
+
 	var topic string
 	if !strings.Contains(address, "/") {
 		topic = options["topic"]
