@@ -65,6 +65,8 @@ func init() {
 type NsqAdapter struct {
 	route    *router.Route
 	topic    string
+	svc      string
+	app      string
 	producer *gonsq.Producer
 }
 
@@ -76,15 +78,10 @@ func parseNsqAddress(address string) string {
 	return strings.Split(address, ",")[0]
 }
 
-func parseTopic(address string, options map[string]string) string {
-	fmt.Printf("Parsing topic '%s' %+v\n", address, options)
+func parseTopic(options map[string]string) string {
+	fmt.Printf("Parsing topic %+v\n", options)
 
-	var topic string
-	if !strings.Contains(address, "/") {
-		topic = options["topic"]
-	} else {
-		topic = address[strings.Index(address, "/")+1:]
-	}
+	topic := options["topic"]
 
 	s := regexp.MustCompile("#").Split(topic, 2)
 	if len(s) > 1 && s[1] != "ephemeral" {
@@ -100,6 +97,26 @@ func parseTopic(address string, options map[string]string) string {
 	return topic
 }
 
+func parseServiceAndApp(options map[string]string) (string, string) {
+	fmt.Printf("Parsing service and app: %+v\n", options)
+
+	var svc, app string
+
+	if _, ok := options["svc"]; ok {
+		svc = options["svc"]
+	} else {
+		svc = "testsvc"
+	}
+
+	if _, ok := options["app"]; ok {
+		app = options["app"]
+	} else {
+		app = "testapp"
+	}
+
+	return svc, app
+}
+
 // NewNsqAdapter custom logspout module
 func NewNsqAdapter(route *router.Route) (router.LogAdapter, error) {
 	address := parseNsqAddress(route.Address)
@@ -107,10 +124,12 @@ func NewNsqAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, fmt.Errorf("There is no NSQ address mentioned in the format of host:port")
 	}
 
-	topic := parseTopic(route.Address, route.Options)
+	topic := parseTopic(route.Options)
 	if topic == "" {
 		return nil, fmt.Errorf("No valid NSQ topic was found")
 	}
+
+	svc, app := parseServiceAndApp(route.Options)
 
 	fmt.Printf("Registering producer %s\n", address)
 	w, err := gonsq.NewProducer(address, gonsq.NewConfig())
@@ -122,6 +141,8 @@ func NewNsqAdapter(route *router.Route) (router.LogAdapter, error) {
 	return &NsqAdapter{
 		route:    route,
 		topic:    topic,
+		svc:      svc,
+		app:      app,
 		producer: w,
 	}, nil
 }
@@ -138,11 +159,11 @@ func (a *NsqAdapter) buildMessage(msg string) *Log {
 		},
 		Data: &Data{
 			ParentCtx:   uuid,
-			Service:     "Template service",
+			Service:     a.svc,
 			HostName:    host,
 			Timestamp:   getDate(),
 			Severity:    "raw",
-			Application: "Template app",
+			Application: a.app,
 			Message:     msg,
 		},
 	}
