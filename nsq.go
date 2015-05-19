@@ -112,11 +112,13 @@ func NewNsqAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, fmt.Errorf("No valid NSQ topic was found")
 	}
 
+	fmt.Printf("Registering producer %s\n", address)
 	w, err := gonsq.NewProducer(address[0]+":"+address[1], gonsq.NewConfig())
 	if err != nil {
 		return nil, err
 	}
 
+	fmt.Printf("Subscribing to topic '%s'\n", topic)
 	return &NsqAdapter{
 		route:    route,
 		topic:    topic,
